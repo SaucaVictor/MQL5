@@ -11,11 +11,6 @@ int s=0;
 input int cnt=1;
 int cnt_=1,i=-1;
 ulong v[100]={NULL};
-input bool pro=true;
-input int levrage=80;
-double fullmargin;
-double diff;
-input double acc=100000;
 bool IsInTradingHours()
 {
    MqlDateTime dt;
@@ -54,42 +49,28 @@ void OnTick(){
                if(iOpen(_Symbol,PERIOD_CURRENT,2)>iClose(_Symbol,PERIOD_CURRENT,2)){
                   if(iOpen(_Symbol,PERIOD_CURRENT,1)>iClose(_Symbol,PERIOD_CURRENT,1)){
                      if(iLow(_Symbol,PERIOD_CURRENT,3)>iHigh(_Symbol,PERIOD_CURRENT,1)){
-                        if(!pro){
-                           if(lot>10){
-                              int c=lot/10,lots;
-                              lots=lot-c*10;
-                              while(c){
-                                 trade.Sell(10,_Symbol);
-                                 pticket=trade.ResultOrder();
-                                 i++;
-                                 v[i]=pticket;
-                                 c--;
-                              }
-                              if(lots){
-                                 trade.Sell(lots,_Symbol);
-                                 pticket=trade.ResultOrder();
-                                 i++;
-                                 v[i]=pticket;
-                              }
-                              cnt_--;
-                           }else{
-                              trade.Sell(lot,_Symbol);
-                              pticket=trade.ResultOrder();
-                              s=0;
-                              cnt_--;
-                           }
-                        }else{
-                           diff=iLow(_Symbol,PERIOD_CURRENT,3)-iHigh(_Symbol,PERIOD_CURRENT,1);
-                           if(diff<0)diff*=-1;
-                           fullmargin = (acc*levrage)/(s_price*100);
-                           int c=fullmargin/10;
+                        if(lot>10){
+                           int c=lot/10,lots;
+                           lots=lot-c*10;
                            while(c){
                               trade.Sell(10,_Symbol);
                               pticket=trade.ResultOrder();
                               i++;
                               v[i]=pticket;
                               c--;
+                              
                            }
+                           if(lots){
+                              trade.Sell(lots,_Symbol);
+                              pticket=trade.ResultOrder();
+                              i++;
+                              v[i]=pticket;
+                           }
+                           cnt_--;
+                        }else{
+                           trade.Sell(lot,_Symbol);
+                           pticket=trade.ResultOrder();
+                           s=0;
                            cnt_--;
                         }
                      }
@@ -102,35 +83,9 @@ void OnTick(){
                   if(iOpen(_Symbol,PERIOD_CURRENT,2)<iClose(_Symbol,PERIOD_CURRENT,2)){
                      if(iOpen(_Symbol,PERIOD_CURRENT,1)<iClose(_Symbol,PERIOD_CURRENT,1)){
                         if(iHigh(_Symbol,PERIOD_CURRENT,3)<iLow(_Symbol,PERIOD_CURRENT,1)){
-                           if(!pro){
-                              if(lot>10){
-                                 int c=lot/10,lots;
-                                 lots=lot-c*10;
-                                 while(c){
-                                    trade.Buy(10,_Symbol);
-                                    pticket=trade.ResultOrder();
-                                    i++;
-                                    v[i]=pticket;
-                                    c--;
-                                 }
-                                 if(lots){
-                                    trade.Buy(lots,_Symbol);
-                                    pticket=trade.ResultOrder();
-                                    i++;
-                                    v[i]=pticket;
-                                 }
-                                 cnt_--;
-                              }else{
-                                 trade.Buy(lot,_Symbol);
-                                 pticket=trade.ResultOrder();
-                                 s=1;
-                                 cnt_--;
-                              }
-                           }else{
-                              diff=iHigh(_Symbol,PERIOD_CURRENT,3)-iLow(_Symbol,PERIOD_CURRENT,1);
-                              if(diff<0)diff*=-1;
-                              fullmargin = (acc*levrage)/(s_price*100);
-                              int c=fullmargin/10;
+                           if(lot>10){
+                              int c=lot/10,lots;
+                              lots=lot-c*10;
                               while(c){
                                  trade.Buy(10,_Symbol);
                                  pticket=trade.ResultOrder();
@@ -138,6 +93,17 @@ void OnTick(){
                                  v[i]=pticket;
                                  c--;
                               }
+                              if(lots){
+                                 trade.Buy(lots,_Symbol);
+                                 pticket=trade.ResultOrder();
+                                 i++;
+                                 v[i]=pticket;
+                              }
+                              cnt_--;
+                           }else{
+                              trade.Buy(lot,_Symbol);
+                              pticket=trade.ResultOrder();
+                              s=1;
                               cnt_--;
                            }
                         }
@@ -160,47 +126,24 @@ void OnTick(){
                }
             }
          }else{
-            if(!pro){
-               double profit=0;
-               int j=i;
-               while(j>=0){
-                  if(PositionSelectByTicket(v[j])){
-                     profit+=PositionGetDouble(POSITION_PROFIT);
-                  }
-                  j--;
+            double profit=0;
+            int j=i;
+            while(j>=0){
+               if(PositionSelectByTicket(v[j])){
+                  profit+=PositionGetDouble(POSITION_PROFIT);
                }
-               printf("- profit: %.2f",profit);
-               if(profit>=rrr*risk){
-                  CloseAll(i);
-                  pticket=0;
-                  i=-1;
-               }else{
-                  if(profit<=(-1)*risk){
-                     CloseAll(i);
-                     pticket=0;
-                     i=-1;
-                  }
-               }
+               j--;
+            }
+            printf("- profit: %.2f",profit);
+            if(profit>=rrr*risk){
+               CloseAll(i);
+               pticket=0;
+               i=-1;
             }else{
-               double profit=0;
-               int j=i;
-               while(j>=0){
-                  if(PositionSelectByTicket(v[j])){
-                     profit+=PositionGetDouble(POSITION_PROFIT);
-                  }
-                  j--;
-               }
-               printf("- profit: %.2f",profit);
-               if(profit>=diff*1000*10){
+               if(profit<=(-1)*risk){
                   CloseAll(i);
                   pticket=0;
                   i=-1;
-               }else{
-                  if(profit<=(-20)*diff*1000){
-                     CloseAll(i);
-                     pticket=0;
-                     i=-1;
-                  }
                }
             }
          }
